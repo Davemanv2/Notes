@@ -1,0 +1,92 @@
+class NoteViewController: UIViewController, UINavigationControllerDelegate, UINavigationBarDelegate, UITextViewDelegate, UIImagePickerControllerDelegate {
+
+    @IBOutlet weak var photoImageView: UIImageView!
+    @IBOutlet weak var noteTextView: UITextView!
+    @IBOutlet weak var saveButtonTapped: UIBarButtonItem!
+
+    var note:Note?
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        noteTextView.delegate = self
+        
+       
+        if let note = note {
+            navigationItem.title = note.title
+            noteTextView.text = note.title
+            photoImageView.image = note.photo
+            }
+        
+        // Fix bug with textview placement
+     self.automaticallyAdjustsScrollViewInsets = false
+        
+        navigationController!.navigationBar.barTintColor = UIColor.whiteColor()
+        UINavigationBar.appearance().titleTextAttributes = [NSForegroundColorAttributeName: UIColor(hexString: "#377DFF")!]
+        navigationController!.navigationBar.tintColor = UIColor(hexString: "#377DFF")
+        self.photoImageView.layer.cornerRadius = self.photoImageView.frame.size.width / 2
+        self.photoImageView.clipsToBounds = true
+
+        // Enable the Save button only if the text field has a valid note name.
+        checkValidNoteTitle()
+        
+      
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
+
+    func textFieldDidBeginEditing(textField: UITextField) {
+        // Disable the Save button while editing.
+        saveButtonTapped.enabled = false
+    }
+    
+    func textFieldDidEndEditing(textField: UITextField) {
+        checkValidNoteTitle()
+        navigationItem.title = textField.text
+    }
+    
+    func checkValidNoteTitle() {
+        // Disable the Save button if the text field is empty.
+        let title = noteTextView.text ?? ""
+        saveButtonTapped.enabled = true
+    }
+    
+    // Configure a view controller before it's presented.
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if saveButtonTapped === sender {
+            let title = noteTextView.text ?? ""
+            let photo = photoImageView.image
+            note = Note(title: title, photo: photo)
+        }
+    }
+    
+    // Cancel a note edit and return to main page
+    @IBAction func cancel(sender: UIBarButtonItem) {
+        let isPresentingInAddNoteMode = presentingViewController is UINavigationController
+        
+        if isPresentingInAddNoteMode {
+            dismissViewControllerAnimated(true, completion: nil)
+        }
+        else {
+            navigationController!.popViewControllerAnimated(true)
+        }
+    }
+    
+    @IBAction func selectPhotoButtonTapped(sender: AnyObject) {
+        let myPickerController = UIImagePickerController()
+        myPickerController.delegate = self
+        myPickerController.sourceType = UIImagePickerControllerSourceType.PhotoLibrary
+        self.presentViewController(myPickerController, animated: true, completion: nil)
+        
+    }
+    
+    func imagePickerController(picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : AnyObject])
+    {
+        photoImageView.image = info[UIImagePickerControllerOriginalImage] as? UIImage
+        self.dismissViewControllerAnimated(true, completion: nil)
+    }
+}
+
