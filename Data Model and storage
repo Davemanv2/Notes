@@ -1,0 +1,44 @@
+class Note: NSObject, NSCoding {
+   
+    // Properties
+    var title: String
+    var photo: UIImage?
+    
+    init?(title:String, photo:UIImage?) {
+       
+        self.title = title
+        self.photo = photo
+        
+        super.init()
+    
+    if title.isEmpty {
+        return nil
+        }
+    }
+    
+    // ArchivingPaths
+    static let DocumentsDirectory = NSFileManager().URLsForDirectory(.DocumentDirectory,
+        inDomains: .UserDomainMask).first!
+    static let ArchiveURL = DocumentsDirectory.URLByAppendingPathComponent("notes")
+
+    
+    // Types
+    struct PropertyKey {
+        static let titleKey = "title"
+        static let photoKey = "photo"
+    }
+    
+    // NSCoding
+    func encodeWithCoder(aCoder: NSCoder) {
+        aCoder.encodeObject(title, forKey: PropertyKey.titleKey)
+        aCoder.encodeObject(photo, forKey: PropertyKey.photoKey)
+    }
+    
+    required convenience init?(coder aDecoder: NSCoder) {
+        
+        let title = aDecoder.decodeObjectForKey(PropertyKey.titleKey) as! String
+        let photo = aDecoder.decodeObjectForKey(PropertyKey.photoKey) as? UIImage
+        self.init(title: title, photo:photo)
+    }
+    
+}
