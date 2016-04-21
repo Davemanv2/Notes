@@ -1,0 +1,122 @@
+class NoteTableViewController: UITableViewController, UINavigationControllerDelegate, UINavigationBarDelegate {
+
+    var notes = [Note]()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Use the edit button item provided by the table view controller.
+        navigationItem.leftBarButtonItem = editButtonItem()
+        if let savedNotes = loadNotes() {
+            notes += savedNotes
+        }
+    
+        else {
+        loadSampleNotes()
+            }
+            
+            // Setting the bar tint color as well as text color.
+        navigationController!.navigationBar.barTintColor = UIColor.whiteColor()
+        
+          // Using "SwiftHEXColors" to make setting hex color codes easier.
+        UINavigationBar.appearance().titleTextAttributes = [NSForegroundColorAttributeName: UIColor(hexString: "#377DFF")!]
+        navigationController!.navigationBar.tintColor = UIColor(hexString: "#377DFF")
+    }
+    
+    // Sample note. Used as a tutorial of sorts when starting the app
+    func loadSampleNotes() {
+        let yourPhoto = UIImage(named: "yourPhoto")!
+        let note1 = Note(title:"Tap me!", photo: yourPhoto)!
+        notes += [note1]
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
+    // Table view data source
+    override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
+        return 1
+    }
+
+    override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return notes.count
+    }
+    
+          //Connecting the cell to code
+    override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
+        let cellIdentifier = "NoteTableViewCell"
+        let cell = tableView.dequeueReusableCellWithIdentifier(cellIdentifier, forIndexPath: indexPath) as! NoteTableViewCell
+        let note = notes[indexPath.row]
+        cell.noteTitleLabel.text = note.title
+        cell.photoImageView.image = note.photo
+        cell.photoImageView.layer.cornerRadius = cell.photoImageView.frame.size.width / 2
+        cell.photoImageView.clipsToBounds = true
+            return cell
+    }
+
+    // Override to support conditional editing of the table view.
+    override func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        // Return false if you do not want the specified item to be editable.
+        return true
+    }
+
+    // Override to support editing the table view.
+    override func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        if editingStyle == .Delete {
+            // Delete the row from the data source
+            notes.removeAtIndex(indexPath.row)
+            saveNotes()
+            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Fade)
+        } else if editingStyle == .Insert {
+            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+        }    
+    }
+
+    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
+        if segue.identifier == "ShowDetail" {
+            let noteDetailViewController = segue.destinationViewController as! NoteViewController
+            
+            // Get the cell that generated this segue.
+            if let selectedNoteCell = sender as? NoteTableViewCell {
+                let indexPath = tableView.indexPathForCell(selectedNoteCell)!
+                let selectedNote = notes[indexPath.row]
+                noteDetailViewController.note = selectedNote
+            }
+        }
+            
+        else if segue.identifier == "AddItem" {
+            print("Adding new note")
+        }
+    }
+    
+    @IBAction func unwindToNoteList(sender: UIStoryboardSegue) {
+        if let sourceViewController = sender.sourceViewController as? NoteViewController, note = sourceViewController.note {
+            if let selectedIndexPath = tableView.indexPathForSelectedRow {
+                // Update an existing note.
+                notes[selectedIndexPath.row] = note
+                tableView.reloadRowsAtIndexPaths([selectedIndexPath], withRowAnimation: .None)
+            }
+            else {
+                // Add a new note.
+                let newIndexPath = NSIndexPath(forRow: notes.count, inSection: 0)
+                notes.append(note)
+                tableView.insertRowsAtIndexPaths([newIndexPath], withRowAnimation: .Bottom)
+            }
+            saveNotes()
+        }
+    }
+    
+    // NSCoding
+    func saveNotes() {
+        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(notes, toFile: Note.ArchiveURL.path!)
+        if !isSuccessfulSave {
+            print("Failed to save notes...")
+        }
+    }
+    
+    func loadNotes() -> [Note]? {
+        return NSKeyedUnarchiver.unarchiveObjectWithFile(Note.ArchiveURL.path!) as? [Note]
+    }
+}
